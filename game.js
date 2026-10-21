@@ -67,7 +67,11 @@ function moveTo(x,y,kind='walk',silent=false){if(!open(x,y))return false;const c
 function act(dir,digOnly=false){if(transit||pendingHit||anyDialog()||s.scene!=='garden')return false;const [dx,dy]=DIR[dir],{x,y}=s.p,nx=x+dx,ny=y+dy;facing=dir;if(nx<0||nx>=C.columns||ny< -1)return false;if(tile(nx,ny)){if(dx&&dy===0&&!digOnly&&canStep(x,y,nx,y-1))return moveTo(nx,y-1);return startDig(nx,ny,dir);}if(digOnly)return false;if(dy<0){if(canClimb(x,y,nx,ny))return moveTo(nx,ny,'climb');if(dx?canStep(x,y,nx,ny):!!tile(x,y+1))return moveTo(nx,ny,'jump');toast('▤ なわ・はしごなら のぼれる！');return false;}return moveTo(nx,ny,dy>0?'descend':'walk');}
 function shaftLength(){let count=0,y=s.p.y;while(open(s.p.x,y+1)){count++;y++;}return count;}
 function startDirection(dir,source='pointer'){if(s.scene!=='garden'||anyDialog()||transit?.kind==='return')return;if(transit)stopTransit();held=dir;holdStarted=now;nextAction=now+C.hitInterval;descentFraction=0;descentSpeed=Math.max(C.descentMinSpeed,shaftLength()/C.descentSeconds);if(dir==='dig')act(facing,true);else act(dir);}
-function clearInput(){pointers.clear();keys.clear();held=null;flyHeld=false;descentFraction=0;document.querySelectorAll('.pressed').forEach(b=>b.classList.remove('pressed'));}
+function clearInput(){
+ const owned=[...pointers.entries()];pointers.clear();keys.clear();held=null;flyHeld=false;descentFraction=0;
+ document.querySelectorAll('.pressed').forEach(b=>b.classList.remove('pressed'));
+ for(const [id,p] of owned)try{if(p.button.hasPointerCapture(id))p.button.releasePointerCapture(id);}catch{}
+}
 function toolList(){return ['shovel',...(s.owned.pick?['pick']:[]),...(s.owned.shovelPlus?['shovelPlus']:[])];}
 function switchTool(){if(pendingHit||transit||s.scene!=='garden')return;const tools=toolList();s.tool=tools[(tools.indexOf(s.tool)+1)%tools.length];if(tools.length===1)toast('おうちで ツルハシを かおう');change();}
 function enterHouse(){if(s.p.y!==-1||transit)return;if(pendingHit)impact();clearInput();s.scene='house';s.p={x:2,y:-1};px=2;py=-1;roomPulse={id:'door',start:now};toast('おかえり！ おへやの ものを タッチ',3);change();updateUI();save();}
@@ -89,20 +93,55 @@ function returnHome(rescue){if(!depth()||transit)return;if(pendingHit)impact();c
 function furniturePosition(item){return {x:(item.x+(s.house?(item.x<.3?-.025:item.x>.7?.025:0):0))*cw,y:item.y*ch};}
 function setupHotspots(){const scene=s.scene;if(hotspotScene===scene)return;hotspotScene=scene;$('hotspots').replaceChildren();if(scene==='house'){for(const item of C.furniture){const b=document.createElement('button');b.id='furniture-'+item.id;b.className='hotspot furniture';b.setAttribute('aria-label',item.label);b.innerHTML=`<span>${item.label}</span>`;b.onclick=()=>{initAudio();if(item.id==='bed')sleep();if(item.id==='shelf')openTools();if(item.id==='sell')sell();if(item.id==='shop'){showDialog('shopDialog');updateUI();}if(item.id==='door')exitHouse();if(item.id==='journal')openJournal();};$('hotspots').appendChild(b);}}else{for(const [id,label] of [['house','おうち'],['well','ほる ▼']]){const b=document.createElement('button');b.id='enter-'+id;b.className='hotspot';b.setAttribute('aria-label',id==='house'?'おうちに はいる':'いどに はいる');b.innerHTML=`${id==='well'?'<i class="ping">👇</i>':''}<span>${label}</span>`;b.onclick=()=>{initAudio();if(id==='house')enterHouse();else enterWell();};$('hotspots').appendChild(b);}}positionHotspots();}
 function positionHotspots(){if(s.scene==='house'){for(const item of C.furniture){const b=$('furniture-'+item.id);if(!b)continue;const p=furniturePosition(item);b.style.left=p.x+'px';b.style.top=p.y+'px';b.classList.toggle('ready',item.id==='sell'&&sellValue()>0||item.id==='bed'&&(s.energy<100||s.jet.owned&&s.jet.fuel<C.jet.maxFuel));}}else{for(const [id,x,y] of [['house',102,-30],['well',300,-25]]){const b=$('enter-'+id);if(!b)continue;b.hidden=s.p.y!==-1||!!transit;const sx=(x-cameraX)*scale,sy=(y-camera)*scale;b.style.left=sx+'px';b.style.top=sy+'px';}}}
-function bindHold(button,kind){button.addEventListener('pointerdown',e=>{if(button.disabled)return;e.preventDefault();initAudio();if(anyDialog())return;if(kind==='fly'){flyHeld=true;nextFlight=now+C.jet.flyInterval;takeoff();}else{startDirection(kind);button.classList.add('pressed');}pointers.set(e.pointerId,{kind,button});button.setPointerCapture(e.pointerId);});function release(e){const p=pointers.get(e.pointerId);if(!p)return;pointers.delete(e.pointerId);p.button.classList.remove('pressed');if(p.kind==='fly')flyHeld=[...pointers.values()].some(p=>p.kind==='fly');else{held=null;descentFraction=0;const other=[...pointers.values()].find(p=>p.kind!=='fly');if(other)startDirection(other.kind);}}for(const ev of ['pointerup','pointercancel','lostpointercapture'])button.addEventListener(ev,release);}
+// Every hold has a pointer owner. Capture loss/cancellation releases that owner only.
+function releasePointer(e){
+ const p=pointers.get(e.pointerId);if(!p)return;
+ pointers.delete(e.pointerId);p.button.classList.remove('pressed');
+ flyHeld=keys.has('f')||[...pointers.values()].some(p=>p.kind==='fly');
+ const other=[...pointers.values()].reverse().find(p=>p.kind!=='fly');
+ const next=other?.kind||keyboardDirection();
+ if(next!==held){held=null;descentFraction=0;if(next)startDirection(next);}
+}
+function bindHold(button,kind){
+ let lastPointerDown=-Infinity;
+ button.addEventListener('pointerdown',e=>{
+  if(button.disabled||e.pointerType==='mouse'&&e.button!==0)return;
+  lastPointerDown=performance.now();e.preventDefault();initAudio();if(anyDialog())return;
+  pointers.set(e.pointerId,{kind,button});
+  if(kind==='fly'){flyHeld=true;nextFlight=now+C.jet.flyInterval;takeoff();}
+  else{startDirection(kind);button.classList.add('pressed');}
+  try{button.setPointerCapture(e.pointerId);}catch{releasePointer(e);}
+ });
+ for(const type of ['pointerup','pointercancel','lostpointercapture'])button.addEventListener(type,releasePointer);
+ button.addEventListener('click',e=>{if(e.detail===0&&performance.now()-lastPointerDown>200&&!anyDialog()){initAudio();if(kind==='fly')takeoff();else act(kind==='dig'?facing:kind,kind==='dig');}});
+}
+// These listeners cancel known game holds; they never suppress global pointer events.
+for(const type of ['pointerup','pointercancel','lostpointercapture'])window.addEventListener(type,releasePointer,true);
 for(const b of document.querySelectorAll('[data-dir]'))bindHold(b,b.dataset.dir);bindHold($('dig'),'dig');bindHold($('fly'),'fly');
 $('switchTool').onclick=()=>{initAudio();switchTool();};$('equipment').onclick=openEquipment;$('boost').onclick=()=>{initAudio();takeoff(true);};$('return').onclick=askReturn;$('exitHouse').onclick=exitHouse;$('bag').onclick=openBag;
-$('sound').onclick=()=>{s.sound=!s.sound;initAudio();if(s.sound)sound('ore');change();};$('help').onclick=()=>showDialog('helpDialog');$('reset').onclick=()=>showDialog('resetDialog');$('manualSave').onclick=()=>{if(save(true)){sound('save');toast('📖 セーブ OK！');}};$('confirmRescue').onclick=()=>{$('rescueDialog').close();returnHome(true);};
+$('sound').onclick=()=>{s.sound=!s.sound;initAudio();if(s.sound)sound('ore');change();};$('help').onclick=()=>showDialog('helpDialog');$('installGuide').onclick=()=>showDialog('installDialog');$('reset').onclick=()=>showDialog('resetDialog');$('manualSave').onclick=()=>{if(save(true)){sound('save');toast('📖 セーブ OK！');}};$('confirmRescue').onclick=()=>{$('rescueDialog').close();returnHome(true);};
 for(const b of document.querySelectorAll('[data-close]'))b.onclick=()=>b.closest('dialog').close();
 $('confirmReset').onclick=()=>{clearInput();if(saveTimeout!==null)clearTimeout(saveTimeout);saveTimeout=null;s=fresh();px=7;py=-1;camera=-155;cameraX=-30;pendingHit=null;stroke=null;transit=null;particles=[];labels=[];chain=[];jetUntil=0;boostUntil=0;blockCache.clear();hotspotScene=null;generate(0);$('travelTag').hidden=true;$('resetDialog').close();toast('あたらしい にわ！ いどを タッチ');change();updateUI();save();};
 function keyboardDirection(){const up=keys.has('ArrowUp')||keys.has('w'),left=keys.has('ArrowLeft')||keys.has('a'),right=keys.has('ArrowRight')||keys.has('d');if(keys.has('q')||up&&left)return 'upleft';if(keys.has('e')||up&&right)return 'upright';if(up)return 'up';if(left)return 'left';if(right)return 'right';if(keys.has('ArrowDown')||keys.has('s'))return 'down';if(keys.has(' '))return 'dig';return null;}
-window.addEventListener('keydown',e=>{if(anyDialog())return;const k=e.key.length===1?e.key.toLowerCase():e.key;if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' ','w','a','s','d','q','e','f','b'].includes(k))e.preventDefault();if(e.repeat)return;initAudio();keys.add(k);if(k==='r')askReturn();if(k==='x')switchTool();if(k==='l')openEquipment();if(k==='b')takeoff(true);if(k==='f'){flyHeld=true;nextFlight=now+C.jet.flyInterval;takeoff();}const d=keyboardDirection();if(d&&d!==held)startDirection(d,'keyboard');});
+window.addEventListener('keydown',e=>{if(anyDialog())return;if([' ','Enter'].includes(e.key)&&e.target.closest?.('button,a,input,select,textarea,summary,[contenteditable="true"]'))return;const k=e.key.length===1?e.key.toLowerCase():e.key;if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' ','w','a','s','d','q','e','f','b'].includes(k))e.preventDefault();if(e.repeat)return;initAudio();keys.add(k);if(k==='r')askReturn();if(k==='x')switchTool();if(k==='l')openEquipment();if(k==='b')takeoff(true);if(k==='f'){flyHeld=true;nextFlight=now+C.jet.flyInterval;takeoff();}const d=keyboardDirection();if(d&&d!==held)startDirection(d,'keyboard');});
 window.addEventListener('keyup',e=>{const k=e.key.length===1?e.key.toLowerCase():e.key;keys.delete(k);if(k==='f')flyHeld=[...pointers.values()].some(p=>p.kind==='fly');const d=keyboardDirection();if(d!==held){held=null;if(d)startDirection(d,'keyboard');}descentFraction=0;});
-window.addEventListener('blur',clearInput);document.addEventListener('visibilitychange',()=>{clearInput();if(document.hidden&&pendingHit)impact();save();});window.addEventListener('pagehide',()=>{if(pendingHit)impact();save();});
-canvas.addEventListener('pointerdown',e=>{e.preventDefault();initAudio();if(s.scene!=='garden'||transit?.kind==='return'||anyDialog())return;if(transit){stopTransit();return;}const r=canvas.getBoundingClientRect(),x=Math.floor(((e.clientX-r.left)/scale+cameraX)/40),y=Math.floor(((e.clientY-r.top)/scale+camera)/40),dx=x-s.p.x,dy=y-s.p.y;if(Math.abs(dx)<=1&&Math.abs(dy)<=1&&(Math.abs(dx)+Math.abs(dy)>0)&&!(dy>0&&dx!==0)){const dir=dy<0?(dx<0?'upleft':dx>0?'upright':'up'):dx<0?'left':dx>0?'right':'down';startDirection(dir);pointers.set(e.pointerId,{kind:dir,button:canvas});canvas.setPointerCapture(e.pointerId);}else if(x===s.bonus.x&&y===s.bonus.y)checkBonus();});
-for(const ev of ['pointerup','pointercancel','lostpointercapture'])canvas.addEventListener(ev,e=>{if(pointers.has(e.pointerId)){pointers.delete(e.pointerId);held=null;descentFraction=0;}});canvas.addEventListener('contextmenu',e=>e.preventDefault());
+window.addEventListener('blur',clearInput);document.addEventListener('visibilitychange',()=>{clearInput();if(document.hidden&&pendingHit)impact();save();});window.addEventListener('pagehide',()=>{clearInput();if(pendingHit)impact();save();});window.addEventListener('pageshow',clearInput);
+canvas.addEventListener('pointerdown',e=>{if(e.pointerType==='mouse'&&e.button!==0)return;e.preventDefault();initAudio();if(s.scene!=='garden'||transit?.kind==='return'||anyDialog())return;if(transit){stopTransit();return;}const r=canvas.getBoundingClientRect(),x=Math.floor(((e.clientX-r.left)/scale+cameraX)/40),y=Math.floor(((e.clientY-r.top)/scale+camera)/40),dx=x-s.p.x,dy=y-s.p.y;if(Math.abs(dx)<=1&&Math.abs(dy)<=1&&(Math.abs(dx)+Math.abs(dy)>0)&&!(dy>0&&dx!==0)){const dir=dy<0?(dx<0?'upleft':dx>0?'upright':'up'):dx<0?'left':dx>0?'right':'down';startDirection(dir);pointers.set(e.pointerId,{kind:dir,button:canvas});canvas.setPointerCapture(e.pointerId);}else if(x===s.bonus.x&&y===s.bonus.y)checkBonus();});
+for(const type of ['pointerup','pointercancel','lostpointercapture'])canvas.addEventListener(type,releasePointer);
+const gameShell=document.querySelector('.game-shell');
+for(const type of ['contextmenu','selectstart','dragstart','dblclick','gesturestart','gesturechange','gestureend']){
+ gameShell.addEventListener(type,e=>{if(!anyDialog())e.preventDefault();},{passive:false});
+}
+// Old iPadOS may ignore some touch-action values. The fallback stays inside the game.
+gameShell.addEventListener('touchmove',e=>{if(!anyDialog()&&e.cancelable)e.preventDefault();},{passive:false});
+const standaloneQuery=matchMedia('(display-mode: standalone)');
+function displayMode(){document.documentElement.classList.toggle('standalone',standaloneQuery.matches||navigator.standalone===true);}
+displayMode();standaloneQuery.addEventListener?.('change',displayMode);
+function sizeFallback(){if(!CSS.supports('height','100dvh'))document.documentElement.style.setProperty('--app-height',`${innerHeight}px`);}
+sizeFallback();window.addEventListener('resize',sizeFallback);window.addEventListener('orientationchange',()=>{clearInput();requestAnimationFrame(resize);});
+screen.orientation?.addEventListener?.('change',clearInput);
 
-function resize(){const r=canvas.getBoundingClientRect(),dpr=Math.min(devicePixelRatio||1,2);cw=r.width;ch=r.height;canvas.width=Math.round(cw*dpr);canvas.height=Math.round(ch*dpr);scale=cw/(cw<600?500:700);ctx.setTransform(dpr,0,0,dpr,0,0);positionHotspots();}
+function resize(){const r=canvas.getBoundingClientRect(),dpr=Math.min(devicePixelRatio||1,2);cw=Math.max(1,r.width);ch=Math.max(1,r.height);canvas.width=Math.round(cw*dpr);canvas.height=Math.round(ch*dpr);scale=cw/(cw<600?500:700);ctx.setTransform(dpr,0,0,dpr,0,0);positionHotspots();}
 new ResizeObserver(resize).observe(canvas);
 function rect(x,y,w,h,c){ctx.fillStyle=c;ctx.fillRect(x,y,w,h);}
 function line(x1,y1,x2,y2,c,w=1){ctx.strokeStyle=c;ctx.lineWidth=w;ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();}

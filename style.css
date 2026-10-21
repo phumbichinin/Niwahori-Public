@@ -8,3 +8,73 @@
 #enter-house span{bottom:-24px}
 .action-bar .item-art{width:35px;height:32px}
 .dpad .item-art{display:block;width:36px;height:34px;margin:0 auto}
+
+/* App viewport: one screen, including the iPad status/home-indicator safe areas. */
+html{height:100%;overscroll-behavior:none;background:var(--cream)}
+body{height:100vh;height:100svh;height:100dvh;height:var(--app-height,100dvh);min-height:0;overflow:hidden;overscroll-behavior:none;display:grid;grid-template-rows:48px minmax(0,1fr) 24px;padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)}
+header{height:48px;width:100%;max-width:1600px;min-width:0;margin:0 auto;padding:0 14px}
+.game-shell{width:calc(100% - 16px);height:auto;min-height:0;max-height:none;max-width:1600px;margin:0 auto;min-width:0;border-radius:14px;box-shadow:none}
+.viewport{min-height:0;min-width:0;flex:1 1 0;contain:layout paint}
+.hud{height:64px;min-width:0;padding:8px 18px;gap:18px}
+.depth-box{min-width:78px}.depth-box strong{font-size:29px}
+.parent-footer{margin:0 auto;padding:0 14px;max-width:1600px;width:100%;min-width:0;align-items:center;gap:6px;line-height:1.2}
+.parent-footer>span{overflow:hidden;white-space:nowrap;text-overflow:ellipsis;min-width:0}
+.footer-actions{display:flex;gap:12px;flex-shrink:0}
+.footer-actions button{white-space:nowrap;font-size:11px;padding:0 2px;min-height:22px}
+.garden-controls{padding:10px 16px;min-width:0}
+.dpad{grid-template-columns:repeat(3,58px);grid-template-rows:repeat(3,50px);gap:5px}
+.dpad button{min-height:50px}
+.action-bar button{min-height:56px}
+/* Suppress native gestures only on game surfaces, never on the dialogs. */
+.game-shell,.game-shell *,header button,.parent-footer button{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.game-shell,.viewport,canvas,.dpad,.dpad button,.action-bar button,.hotspot,.return-card button,.house-controls button{touch-action:none}
+.game-shell svg,.game-shell img{pointer-events:none;-webkit-user-drag:none;user-drag:none}
+.parent-footer button,header button{touch-action:manipulation}
+dialog{max-height:calc(100vh - 32px);max-height:calc(100dvh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px) - 32px);overscroll-behavior:contain;touch-action:pan-y pinch-zoom;-webkit-overflow-scrolling:touch;scrollbar-gutter:stable;overflow:auto}
+dialog button,dialog summary{touch-action:manipulation;-webkit-touch-callout:none}
+dialog img,dialog svg{-webkit-touch-callout:none;-webkit-user-drag:none}
+.standalone #installGuide{display:none}
+@media(display-mode:standalone){#installGuide{display:none}}
+@media(max-width:700px){
+ body{grid-template-rows:46px minmax(0,1fr) 24px}header{height:46px;padding:0 10px}.brand{font-size:22px}
+ .game-shell{height:auto;min-height:0;max-height:none;width:calc(100% - 12px);margin:0 auto;border-radius:12px}
+ .hud{height:60px;padding:7px 10px;gap:12px}.depth-box{min-width:60px}.viewport{min-height:0}
+ .garden-controls{padding:8px 10px}.action-bar{margin-bottom:8px;gap:6px}.action-bar button{min-height:54px}
+ .movement-row{gap:14px}.dpad{grid-template-columns:repeat(3,46px);grid-template-rows:repeat(3,44px);gap:4px}.dpad button{min-height:44px}
+ .house-controls{min-height:110px;padding:9px;gap:6px}.parent-footer{padding:0 10px;font-size:9px}.parent-footer>span{max-width:none}.parent-footer #record{margin-left:5px}.footer-actions{gap:8px}.footer-actions button{font-size:10px}
+ .header-actions button{min-height:44px;width:44px}
+}
+/* A child-friendly control rail leaves the landscape iPad's full height for digging. */
+@media(min-width:750px) and (orientation:landscape) and (min-height:600px){
+ .game-shell{display:grid;grid-template-columns:minmax(0,1fr) 278px;grid-template-rows:64px minmax(0,1fr);gap:0}
+ .hud{grid-row:1;grid-column:1/-1}.viewport{grid-row:2;grid-column:1;height:100%}
+ .garden-controls{grid-row:2;grid-column:2;display:flex;flex-direction:column;padding:14px;gap:12px;border-left:1px solid var(--line)}
+ .action-bar{grid-template-columns:repeat(2,1fr);gap:10px;margin:0;flex-shrink:0}.action-bar button{min-height:82px;flex-direction:column;gap:5px}.action-bar b{font-size:14px}.action-bar span{font-size:30px}.action-bar .item-art{width:40px;height:38px}
+ .movement-row{flex:1;flex-direction:column;justify-content:center;gap:24px;min-height:0}
+ .dpad{grid-template-columns:repeat(3,64px);grid-template-rows:repeat(3,58px);gap:6px}.dpad button{min-height:58px;font-size:30px}
+ .return-card{width:100%;max-width:none;flex:0 0 auto}.return-card>button{min-height:62px}.return-card>button>b{font-size:17px}.return-card>small{font-size:12px}
+ .house-controls{grid-row:2;grid-column:2;flex-direction:column;justify-content:center;align-items:center;min-height:0;padding:16px;gap:24px;text-align:center}.house-controls>span{line-height:1.8}.house-controls button{min-height:58px;width:100%}
+}
+@media(min-width:750px) and (orientation:landscape) and (min-height:600px) and (max-height:730px){
+ .garden-controls{padding:10px;gap:8px}.action-bar button{min-height:64px}.movement-row{gap:14px}.dpad{grid-template-rows:repeat(3,52px)}.dpad button{min-height:52px}.return-card>button{min-height:54px}
+}
+/* Phones in landscape and iPad split view keep every control on screen too. */
+@media(min-width:620px) and (orientation:landscape) and (max-height:599px){
+ body{grid-template-rows:44px minmax(0,1fr) 22px}header{height:44px}.brand{font-size:21px}
+ .game-shell{display:grid;grid-template-columns:minmax(0,1fr) 330px;grid-template-rows:48px minmax(0,1fr);min-height:0;height:auto}
+ .hud{grid-row:1;grid-column:1/-1;height:48px;padding:4px 12px}.hud .depth-box{flex-direction:row;align-items:center;gap:8px}.hud .depth-box strong{font-size:25px}
+ .viewport{grid-row:2;grid-column:1;min-height:0;height:100%}
+ .garden-controls{grid-row:2;grid-column:2;display:flex;flex-direction:column;justify-content:center;gap:8px;padding:8px;border-left:1px solid var(--line)}
+ .action-bar{grid-template-columns:repeat(4,1fr);margin:0;gap:5px}.action-bar button{min-height:48px;flex-direction:column;gap:0}.action-bar b{font-size:10px}.action-bar span{font-size:22px}.action-bar .item-art{width:28px;height:25px}
+ .movement-row{gap:10px;justify-content:space-between}.dpad{grid-template-columns:repeat(3,44px);grid-template-rows:repeat(3,44px);gap:4px}.dpad button{min-height:44px;font-size:23px}
+ .return-card{flex:1;width:auto;min-width:0}.return-card>button{gap:4px;min-height:52px;padding:4px}.return-card>button>span{font-size:23px}.return-card>button>b{font-size:12px}.cost-heading{font-size:10px}.cost-heading b{font-size:15px}.return-card>small{font-size:10px}
+ .house-controls{grid-row:2;grid-column:2;flex-direction:column;min-height:0;padding:12px;gap:15px;text-align:center}.house-controls button{min-height:48px}
+ .scene-label{top:7px;left:7px;font-size:11px;padding:5px 9px}.toast{font-size:11px;padding:7px 10px;bottom:7px}.jet-hud{top:40px;right:7px}
+}
+@media(min-width:750px) and (orientation:landscape) and (min-height:600px) and (max-height:650px){
+ .action-bar button{min-height:56px;gap:2px}.action-bar span{font-size:25px}.action-bar .item-art{width:30px;height:28px}
+ .movement-row{gap:10px}.dpad{grid-template-rows:repeat(3,48px)}.dpad button{min-height:48px;font-size:26px}
+ .return-card>button{min-height:48px}.cost-heading{margin-top:8px}.return-card>small{font-size:11px}
+}
+.header-actions{flex-shrink:0}.header-actions button{flex:0 0 44px;min-width:44px}.brand{white-space:nowrap}
+@media(max-width:360px){.header-actions #saveState{display:none}}
