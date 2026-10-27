@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#f4f0e5">
+<meta name="application-name" content="にわほり どろほりじっけん"><meta name="apple-mobile-web-app-title" content="土ほり"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><link rel="manifest" href="manifest.json"><link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
+<title>にわほり — 土をけずる実験室</title><link rel="icon" href="icon.svg" type="image/svg+xml"><link rel="stylesheet" href="lab.css">
+</head>
+<body>
+<header><a class="wordmark" href="../index.html" data-compare target="_blank" rel="noopener">⛏ にわほり <small>0.3 LAB</small></a><div class="header-actions"><span id="saveStatus" role="status">じどうセーブ</span><button id="sound" aria-label="音を切り替える" aria-pressed="true">♪</button><button id="help" aria-label="あそびかた">？</button></div></header>
+<main>
+ <section class="field" aria-label="土をけずる実験場">
+  <canvas id="world" aria-label="土をタッチ、または下の掘るボタンを長押し" tabindex="0"></canvas>
+  <div class="field-top"><span class="lab-tag">掘削実験 / 6pxの土</span><span class="depth"><b id="depth">0.0</b> m</span></div>
+  <div id="toast" class="toast" role="status">▼ ながく おして、つちを ほろう</div>
+  <div class="world-legend"><span><i class="soil"></i>つち</span><span><i class="hard"></i>かたいつち</span><span><i class="rock"></i>いわ</span><span><i class="ore"></i>こうせき</span></div>
+ </section>
+ <aside class="controls">
+  <div class="intro"><span class="eyebrow">ちいさな井戸から、じぶんの穴へ。</span><h1>ざくっ、と<br>けずってみよう。</h1><p>土のかべをタッチ。<br>好きな形に、すこしずつ。</p></div>
+  <div class="tool-switch" aria-label="道具"><button id="shovel" class="selected" aria-pressed="true"><span>♠</span>シャベル</button><button id="pick" aria-pressed="false"><span>⛏</span>ツルハシ</button></div>
+  <div class="dig-pad" aria-label="掘る方向">
+   <button data-dig="left" aria-label="左を掘る">◀</button><button data-dig="down" class="dig-main" aria-label="下を掘る"><span>♠</span>ほる ▼<small>ながく おせるよ</small></button><button data-dig="right" aria-label="右を掘る">▶</button>
+  </div>
+  <div class="move-row"><span>うごく</span><button data-move="left" aria-label="左に歩く">←</button><button data-move="up" aria-label="穴を登る">↑</button><button data-move="right" aria-label="右に歩く">→</button></div>
+  <div class="pocket"><div><span>ひろった こうせき</span><strong>✦ <b id="oreCount">0</b></strong></div><small id="materialHint">やわらかい土は シャベルで。</small></div>
+  <div class="utility"><button id="surface">↑ いりぐちへ</button><button id="reset">やりなおす</button></div>
+  <a class="compare" href="../index.html" data-compare target="_blank" rel="noopener">Ver.0.2 と くらべる ↗</a>
+ </aside>
+</main>
+<footer><span>SOIL STUDY 01 <i>·</i> 独立した実験版 / 本編のセーブとは別</span><span id="perf">局所更新 · なめらかな輪郭</span></footer>
+<dialog id="helpDialog"><div class="dialog-head"><h2>つちを けずろう</h2><button data-close aria-label="閉じる">×</button></div><p>① <b>ほる ▼ を長押し</b>。シャベルの先から土がなくなるよ。</p><p>② 近くの土を<b>タッチ・長押し・なぞる</b>と、好きな向きにけずれるよ。白い輪が届くところ。</p><p>③ かたい岩は<b>ツルハシ</b>。まわりの土をほると、こうせきが見えてくる！</p><p>← ↑ → で移動。↑は、掘った穴を登る実験用の操作。体力・売買はありません。</p><details><summary>大人の方へ・比較とキーボード</summary><p>方向キー / WASD：移動（下は掘る）。Space：下を掘る。Q / E：左 / 右を掘る。1 / 2：道具。R：入口へ。近くの壁をクリックして長押しでも掘れます。井戸の入口は狭いまま、地下では横穴も作れます。地形は実験版専用キーで自動保存します。</p><p>Ver.0.2は別タブで開きます。「四角さ」「好きな形」「岩が割れる感触」「鉱石の発見」「長押し」を比べてください。今回は深さ約40mまでの有限地形です。検証用の独立版で、本編への統合は行いません。</p></details></dialog>
+<dialog id="resetDialog"><div class="dialog-head"><h2>実験の穴を やりなおす？</h2></div><p>この実験版の穴と鉱石だけを消します。本編Ver.0.2のデータは変わりません。</p><div class="dialog-actions"><button data-close>やめる</button><button id="confirmReset" class="danger">やりなおす</button></div></dialog>
+<script src="terrain.js"></script><script src="lab.js"></script>
+</body></html>

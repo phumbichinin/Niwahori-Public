@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+<rect width="512" height="512" fill="#b66e45"/>
+<circle cx="256" cy="247" r="164" fill="#dfb982"/>
+<path d="M105 269q70-37 133 4t164-13v65q-55 99-144 89t-153-89Z" fill="#a2754a"/>
+<path d="M171 144q-41 20-24 83t4 89q-8 53 49 59t70-50q3-33 39-51t10-68q-25-48-72-41t-76-21Z" fill="#3c5847"/>
+<path d="m174 346 133-168" stroke="#654b32" stroke-width="23" stroke-linecap="round"/>
+<path d="m174 342 133-168" stroke="#e4c992" stroke-width="14" stroke-linecap="round"/>
+<path d="m278 143 42-40 61 50-36 46q-20 20-39 0Z" fill="#a9c5b7" stroke="#466855" stroke-width="7"/>
+<path d="m289 145 31-29 45 37" fill="none" stroke="#ecf0d9" stroke-width="6"/>
+<path d="m155 326 19-21 26 20-21 25Z" fill="none" stroke="#f3ddb0" stroke-width="10"/>
+<path d="m350 297 22-12 23 22-11 29-27 1-15-24Z" fill="#f1cf69"/>
+<path d="M118 139v25m-12-12h25" stroke="#fff1cc" stroke-width="6" stroke-linecap="round"/>
+<text x="256" y="451" text-anchor="middle" fill="#fff2d9" font-family="sans-serif" font-size="37" font-weight="700" letter-spacing="10">LAB</text>
+</svg>
